@@ -56,11 +56,11 @@ router.get('/', async (req, res) => {
                 c.address as court_address, 
                 s.start_time, 
                 s.end_time,
-                LOWER(st.status_name) as status,  -- <--- SỬA Ở ĐÂY
+                LOWER(st.name) as status,  -- <--- SỬA Ở ĐÂY
                 pm.display_name as payment_method
             FROM bookings b
             JOIN courts c ON b.court_id = c.id
-            JOIN slots s ON b.slot_id = s.id
+            JOIN time_slots s ON b.slot_id = s.id
             LEFT JOIN booking_statuses st ON b.status_id = st.id
             LEFT JOIN payment_methods pm ON b.payment_method_id = pm.id
             WHERE b.user_id = $1
@@ -82,7 +82,7 @@ router.put('/:id/cancel', async (req, res) => {
     
     try {
         // Tìm ID của trạng thái Cancelled
-        const statusRes = await pool.query("SELECT id FROM booking_statuses WHERE status_name = 'Cancelled'");
+        const statusRes = await pool.query("SELECT id FROM booking_statuses WHERE name = 'Cancelled'");
         const cancelledId = statusRes.rows[0]?.id || 3;
 
         await pool.query(

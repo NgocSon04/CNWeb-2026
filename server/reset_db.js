@@ -55,11 +55,11 @@ async function resetDatabase() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS booking_statuses (
                 id SERIAL PRIMARY KEY,
-                status_name VARCHAR(50) NOT NULL
+                name VARCHAR(50) NOT NULL
             );
         `);
         await pool.query(`
-            INSERT INTO booking_statuses (id, status_name) VALUES 
+            INSERT INTO booking_statuses (id, name) VALUES 
             (1, 'Pending'), (2, 'Confirmed'), (3, 'Cancelled'), (4, 'Completed');
         `);
 

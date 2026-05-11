@@ -272,7 +272,115 @@ router.get('/customers', async (req, res) => {
         });
     }
 });
+// ==========================================
+// XÓA KHÁCH HÀNG
+// ==========================================
+router.delete('/customers/:id', async (req, res) => {
+    try {
 
+        const userId = req.params.id;
+
+        // Không cho xóa admin
+        const userCheck = await pool.query(`
+            SELECT u.id, r.name as role_name
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.id = $1
+        `, [userId]);
+
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({
+                error: 'Không tìm thấy người dùng'
+            });
+        }
+
+        if (userCheck.rows[0].role_name === 'admin') {
+            return res.status(403).json({
+                error: 'Không thể xóa tài khoản admin'
+            });
+        }
+
+        // Xóa booking trước
+        await pool.query(`
+            DELETE FROM bookings
+            WHERE user_id = $1
+        `, [userId]);
+
+        // Xóa user
+        await pool.query(`
+            DELETE FROM users
+            WHERE id = $1
+        `, [userId]);
+
+        res.json({
+            message: 'Xóa khách hàng thành công'
+        });
+
+    } catch (error) {
+
+        console.error('Lỗi xóa khách hàng:', error);
+
+        res.status(500).json({
+            error: 'Lỗi server'
+        });
+    }
+});
+// ==========================================
+// KHÓA / MỞ KHÓA TÀI KHOẢN
+// ==========================================
+router.put('/customers/:id/lock', async (req, res) => {
+    try {
+
+        const userId = req.params.id;
+
+        // Kiểm tra user tồn tại
+        const userRes = await pool.query(`
+            SELECT u.id, u.is_locked, r.name as role_name
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.id = $1
+        `, [userId]);
+
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({
+                error: 'Không tìm thấy người dùng'
+            });
+        }
+
+        const user = userRes.rows[0];
+
+        // Không cho khóa admin
+        if (user.role_name === 'admin') {
+            return res.status(403).json({
+                error: 'Không thể khóa tài khoản admin'
+            });
+        }
+
+        // Đảo trạng thái
+        const newStatus = !user.is_locked;
+
+        await pool.query(`
+            UPDATE users
+            SET is_locked = $1
+            WHERE id = $2
+        `, [newStatus, userId]);
+
+        res.json({
+            message: newStatus
+                ? 'Mở khóa tài khoản thành công'
+                : 'Khóa tài khoản thành công',
+            is_locked: newStatus
+        });
+
+    } catch (error) {
+
+        console.error('Lỗi khóa tài khoản:', error);
+
+        res.status(500).json({
+            error: 'Lỗi server'
+        });
+    }
+});
 // ==========================================
 // 5. QUẢN LÝ SÂN
 // ==========================================
