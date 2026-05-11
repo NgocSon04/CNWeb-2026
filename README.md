@@ -161,8 +161,3 @@ npm start
 - **Authentication:** JWT + bcrypt
 - **Container:** Docker
 
----
-
-## 📞 Liên hệ
-
-Nếu gặp vấn đề, vui lòng liên hệ qua email hoặc tạo issue.
