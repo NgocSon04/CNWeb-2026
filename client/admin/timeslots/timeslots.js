@@ -41,7 +41,7 @@ async function loadSlots() {
        const slots = await api.get(`/admin/courts/${courtId}/slots`);
         currentSlots = slots;
 
-        container.innerHTML = slots.map(slot => `
+        container.innerHTML = time_slots.map(slot => `
       <div class="slot-item">
         <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
           <input type="checkbox" 
@@ -71,7 +71,7 @@ async function saveSlots() {
 
     const slots = [];
     document.querySelectorAll('#slots-list input[type="checkbox"]').forEach(cb => {
-        slots.push({
+        time_slots.push({
             id: parseInt(cb.dataset.slotId),
             is_available: cb.checked
         });

@@ -91,7 +91,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 4. LẤY KHUNG GIỜ TRỐNG (ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT ĐỂ SỬA LỖI)
+// 4. LẤY KHUNG GIỜ TRỐNG (ĐÃ CHUẨN HÓA THEO CẤU TRÚC DB THỰC TẾ)
 router.get('/:id/slots', async (req, res) => {
     try {
         const { date } = req.query;
@@ -101,25 +101,28 @@ router.get('/:id/slots', async (req, res) => {
             return res.status(400).json({ error: 'Vui lòng chọn ngày' });
         }
 
-        // Logic: Lấy tất cả khung giờ từ bảng 'slots'
-        // Sau đó kiểm tra xem khung giờ đó đã bị đặt chưa (bảng bookings)
-        // Status ID 3 là Cancelled (Hủy), nên nếu status != 3 thì coi như đã đặt
         const sql = `
             SELECT 
                 s.id, 
-                s.name, 
+                -- Tạo cột name hiển thị cho Frontend (VD: 08:00 - 09:00)
+                TO_CHAR(s.start_time, 'HH24:MI') || ' - ' || TO_CHAR(s.end_time, 'HH24:MI') as name,
                 s.start_time, 
                 s.end_time,
-                s.price_modifier,
+                -- Logic kiểm tra chỗ trống kép:
+                -- 1. Nếu cột is_available của slot là false -> Hết chỗ (bảo trì/đóng)
+                -- 2. Nếu tìm thấy trong bảng bookings -> Hết chỗ (đã có người đặt)
+                -- 3. Ngược lại -> Còn chỗ
                 CASE 
-                    WHEN b.id IS NOT NULL THEN false -- Nếu tìm thấy trong booking -> Hết chỗ (available = false)
-                    ELSE true                        -- Ngược lại -> Còn chỗ
+                    WHEN s.is_available = false THEN false
+                    WHEN b.id IS NOT NULL THEN false 
+                    ELSE true                        
                 END as available
-            FROM slots s
+            FROM time_slots s
             LEFT JOIN bookings b ON s.id = b.slot_id 
                 AND b.court_id = $1 
                 AND b.booking_date = $2
-                AND b.status_id != 3 -- Trừ những đơn đã hủy ra
+                AND b.status_id != 3 -- Trừ những đơn đã hủy
+            WHERE s.court_id = $1 -- CHỈ LẤY CÁC KHUNG GIỜ CỦA ĐÚNG SÂN NÀY
             ORDER BY s.start_time
         `;
 

@@ -76,19 +76,30 @@ router.get('/', async (req, res) => {
 });
 
 // 4. API Hủy (Dành cho User tự hủy)
+// 4. API Hủy (Dành cho User tự hủy) - CẬP NHẬT LƯU LÝ DO
 router.put('/:id/cancel', async (req, res) => {
     const bookingId = req.params.id;
-    const { reason } = req.body;
+    const { reason } = req.body; // Lý do hủy từ Frontend
     
     try {
-        // Tìm ID của trạng thái Cancelled
+        // 1. Tìm ID của trạng thái Cancelled
         const statusRes = await pool.query("SELECT id FROM booking_statuses WHERE name = 'Cancelled'");
         const cancelledId = statusRes.rows[0]?.id || 3;
 
+        // 2. Cập nhật đơn đặt thành trạng thái Hủy
         await pool.query(
             'UPDATE bookings SET status_id = $1 WHERE id = $2', 
             [cancelledId, bookingId]
         );
+
+        // 3. THÊM MỚI: Lưu lý do hủy vào bảng booking_cancellations
+        if (reason) {
+            await pool.query(
+                'INSERT INTO booking_cancellations (booking_id, reason) VALUES ($1, $2)',
+                [bookingId, reason]
+            );
+        }
+
         res.json({ message: 'Hủy thành công' });
     } catch (error) {
         console.error('Lỗi hủy sân:', error);

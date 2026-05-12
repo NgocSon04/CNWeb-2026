@@ -164,17 +164,18 @@ async function loadSlots() {
     try {
         const slots = await api.get(`/courts/${courtData.id}/slots?date=${selectedDate}`);
 
+        // Đã sửa: Dùng 'slots.map' thay vì 'time_slots.map'
         container.innerHTML = slots.map(slot => `
       <button class="slot-btn ${slot.available ? '' : 'unavailable'}" 
               data-slot-id="${slot.id}"
               data-start="${slot.start_time}"
               data-end="${slot.end_time}"
               ${slot.available ? '' : 'disabled'}>
-        ${slot.start_time} - ${slot.end_time}
+        ${slot.name} <!-- Đã sửa: Dùng slot.name hiển thị giờ cho đẹp -->
       </button>
     `).join('');
 
-        // Slot selection
+        // Bắt sự kiện chọn slot
         container.querySelectorAll('.slot-btn:not(.unavailable)').forEach(btn => {
             btn.addEventListener('click', () => {
                 container.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
@@ -190,6 +191,7 @@ async function loadSlots() {
 
         updateBookButton();
     } catch (error) {
+        console.error("Chi tiết lỗi hiển thị slot:", error); // Thêm dòng này để dễ debug
         container.innerHTML = '<p class="text-danger">Không thể tải khung giờ.</p>';
     }
 }
